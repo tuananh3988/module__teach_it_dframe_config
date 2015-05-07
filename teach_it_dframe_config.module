@@ -1,0 +1,332 @@
+<?php
+
+function teach_it_dframe_config_theme() {
+    return array(
+        'create_account_shop_form' => array(
+            'render element' => 'form',
+        ),
+    );
+}
+
+function create_account_shop_form($form, &$form_state) {
+    if (empty($form_state['abc'])) {
+        $form_state['abc'] = 'build';
+    }
+    
+    $form["wrapper"] = array(
+        '#weight' => '-1',
+        "#markup" => "<div id='test-ajax'></div>"
+    );
+    
+    $form['email'] = array(
+        '#weight' => '0',
+        '#required' => '1',
+        '#type' => 'textfield',
+        '#title' => t('Email'),
+    );
+
+    $form['first_name'] = array(
+        '#weight' => '1',
+        '#required' => '1',
+        '#type' => 'textfield',
+        '#title' => t('First Name'),
+    );
+    
+    
+    if( $form_state['abc'] == 'build') {
+        $form['last_name'] = array(
+            '#weight' => '2',
+            '#required' => '1',
+            '#type' => 'textfield',
+            '#title' => t('Last Name'),
+        );
+    }
+    unset($form['last_name']);
+
+    $form['password'] = array(
+        '#weight' => '3',
+        '#required' => '1',
+        '#type' => 'password_confirm',
+    );
+
+    $form['submit'] = array(
+        '#weight' => '4',
+        '#type' => 'submit',
+        '#value' => t('Sign Up'),
+        '#submit' => array('ajax_example_add_more_remove_one'),
+        "#ajax" => array(
+            "callback" => "dr_search_test_form_callback",
+            "wrapper" => "test-ajax",
+            "effect" => "fade"
+        )
+    );
+
+
+    return $form;
+}
+
+function ajax_example_add_more_remove_one($form, &$form_state) {
+    $form_state['abc'] = 'rebuild';
+    $form_state['rebuild'] = TRUE;
+
+}
+
+function dr_search_test_form_callback($form, &$form_state) {
+    return "<div id='test-ajax'>Wrapper Div</div>";
+}
+
+function dr_search_test_form_validate($form, &$form_state) {
+  form_set_error("password", "Some error to display.");
+}
+
+function create_account_shop_form_submit(&$form, &$form_state) {
+//
+//    $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
+//    $session = $client->login(
+//            array('username' => 'cantuananh_createaccount', 'apiKey' => 'cantuananh_createaccount123456')
+//    );
+//
+//    $sessionId = $session->result;
+//
+//    $result = $client->customerCustomerCreate(array(
+//        "sessionId" => $sessionId,
+//        'customerData' => array('email' => 'truongnv39@test.com', 'firstname' => 'Dough', 'lastname' => 'Deeks', 'password' => 'password', 'website_id' => 1, 'store_id' => 1, 'group_id' => 1)
+//    ));
+//
+//    var_dump($result);
+//    die;
+    unset($form['last_name']);
+}
+
+function teach_it_dframe_config_menu() {
+    $items['shop/stores'] = array(
+        'title' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
+        'title callback' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
+        'page callback' => 'shop_stores_view',
+        //'page arguments' => array(1, 'foo'),
+        'access callback' => TRUE,
+        'type' => MENU_NORMAL_ITEM,
+    );
+
+    return $items;
+}
+
+function shop_stores_view() {
+    $contents = '<h1 class="title-stores">SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!</h1>';
+
+    $results = db_select('shop_stores', 's')
+            ->fields('s')
+            ->execute()
+            ->fetchAll();
+
+    foreach ($results as $key => $store) {
+        $tag = db_select('drupagram_tags', 'd')
+                ->fields('d')
+                ->condition('id', $store->id_instagram_tag, '=')
+                ->condition('delete_flag', 0, '=')
+                ->execute()
+                ->fetchAssoc();
+
+        if (!empty($tag)) {
+            $contents .= process_content_stores($tag['tag_name'], $store);
+        }
+    }
+
+
+    return $contents;
+}
+
+function process_content_stores($name, $store) {
+    $build = '<div class="wrap-view-shop-store">';
+    $build .= '<div class="overlay-stores">';
+    $build .= '<p class="name-store">' . $store->name . '</p>';
+    $build .= '<p>' . $store->address . '</p>';
+    $build .= '<p>' . $store->street . '</p>';
+    $build .= '<p>' . $store->phone . '</p>';
+    $build .= '</div>';
+    $_GET['store'] = $name;
+    $build .= views_embed_view('instagrams', 'block_3');
+    $build .= '</div>';
+
+    return $build;
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function teach_it_dframe_config_block_info() {
+    $blocks['social_information_footer'] = array(
+        'info' => t('Header social information Footer'),
+        'status' => TRUE,
+            //'region' => 'user_first',  // Not usually provided.
+            //'visibility' => BLOCK_VISIBILITY_LISTED,  // Not usually provided.
+            //'pages' => 'node/*', // Not usually provided here.
+    );
+
+    $blocks['social_information'] = array(
+        'info' => t('Header social information'),
+        'status' => TRUE,
+        'region' => 'user_second', // Not usually provided.
+            //'visibility' => BLOCK_VISIBILITY_LISTED,  // Not usually provided.
+            //'pages' => 'node/*', // Not usually provided here.
+    );
+
+    $blocks['block_list_locations'] = array(
+        'info' => t('Block list locations shop'),
+        'status' => TRUE,
+        'region' => 'content', // Not usually provided.
+            //'visibility' => BLOCK_VISIBILITY_LISTED,  // Not usually provided.
+            //'pages' => 'node/*', // Not usually provided here.
+    );
+
+    $blocks['block_list_locations_map'] = array(
+        'info' => t('Block list locations shop map'),
+        'status' => TRUE,
+        'region' => 'content', // Not usually provided.
+        'visibility' => BLOCK_VISIBILITY_LISTED, // Not usually provided.
+        'pages' => 'map/*', // Not usually provided here.
+    );
+
+    $blocks['block_second_menu_right'] = array(
+        'info' => t('Block second menu right'),
+        'status' => TRUE,
+        'region' => -1, // Not usually provided.
+        'visibility' => BLOCK_VISIBILITY_LISTED, // Not usually provided.
+            //'pages' => 'map/*', // Not usually provided here.
+    );
+
+    return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function teach_it_dframe_config_block_view($delta = '') {
+    //The $delta parameter tells us which block is being requested.
+    switch ($delta) {
+        case 'social_information_footer':
+            //$block['subject'] = t('Title of second block (example_empty)');
+            $block['content'] = block_teach_it_dframe_contents($delta);
+            break;
+        case 'social_information':
+            //$block['subject'] = t('Title of second block (example_empty)');
+            $block['content'] = block_teach_it_dframe_contents($delta);
+            break;
+        case 'block_list_locations':
+            //$block['subject'] = t('Title of second block (example_empty)');
+            $block['content'] = block_list_locations($delta);
+            break;
+        case 'block_list_locations_map':
+            //$block['subject'] = t('Title of second block (example_empty)');
+            $block['content'] = block_list_locations($delta);
+            break;
+        case 'block_second_menu_right':
+            //$block['subject'] = t('Title of second block (example_empty)');
+            $block['content'] = block_second_menu_right($delta);
+            break;
+    }
+    return $block;
+}
+
+function block_second_menu_right($which_block) {
+    switch ($which_block) {
+        case 'block_second_menu_right':
+            $block = block_load('block', '15');
+            $block_content = _block_render_blocks(array($block));
+            $build = _block_get_renderable_array($block_content);
+            $block_rendered = drupal_render($build);
+            $main_menu = menu_load_links('main-menu');
+            $menu_list = '';
+            foreach ($main_menu as $menu) {
+                if ($menu['hidden'] == 0) {
+                    $menu_list .= '<p class="swap-second_menu"><a class="second-menu-links" href="' . $menu['link_path'] . '" >' . $menu['link_title'] . '</a></p>';
+                }
+            }
+
+            $block_rendered = str_replace('<h2 class="block-title">right top home page</h2>', '', $block_rendered);
+            $block_rendered = str_replace('render_content_second_menu', $menu_list, $block_rendered);
+            return array('#markup' => $block_rendered);
+            ;
+    }
+}
+
+/**
+ * A module-defined block content function.
+ */
+function block_teach_it_dframe_contents($which_block) {
+    switch ($which_block) {
+        case 'social_information_footer':
+            return array('#markup' => '<div class="social-information-footer">' . social_information_html() . '</div>');
+        case 'social_information':
+            return array('#markup' => '<div class="social-information">' . social_information_html() . '</div>');
+    }
+}
+
+function block_list_locations($which_block) {
+    switch ($which_block) {
+        case 'block_list_locations':
+            $type = "location_shop";
+            $nodes = node_load_multiple(array(), array('type' => $type));
+            $output = '<p class="title">LOCATIONS</p>';
+            $output .= '<ul>';
+            foreach ($nodes as $key => $value) {
+                $output .= '<li><a href="' . url('node/' . $value->nid) . '">' . $value->title . '</a></li>';
+            }
+
+            $output .= '</ul>';
+
+            return array('#markup' => '<div class="block-list-locations-wrap">' . $output . '</div>');
+
+        case 'block_list_locations_map':
+            $type = "location_shop";
+            $nodes = node_load_multiple(array(), array('type' => $type));
+            $output = '<p class="title">LOCATIONS</p>';
+            $output .= '<ul>';
+            foreach ($nodes as $key => $value) {
+                $state = isset($value->field_state['und'][0]['value']) ? '<span class="state"> (' . $value->field_state['und'][0]['value'] . ')</span>' : '';
+                $output .= '<li><a href="' . url('node/' . $value->nid) . '">' . $value->title . $state . '</a></li>';
+            }
+
+            $output .= '</ul>';
+
+            return array('#markup' => '<div class="block-list-locations-map-wrap">' . $output . '</div>');
+    }
+}
+
+function social_information_html() {
+    $tag = '';
+    $twitter_url = theme_get_setting('twitter_url', 'teach_it_dframe');
+    if ($twitter_url !== '') {
+        $tag .= '<a href="' . $twitter_url . '" class="twitter" title="' . t('Twitter') . '">' . t('Twitter') . '</a>';
+    }
+    $facebook_url = theme_get_setting('facebook_url', 'teach_it_dframe');
+    if ($facebook_url !== '') {
+        $tag .= '<a href="' . $facebook_url . '" class="facebook" title="' . t('Facebook') . '">' . t('Facebook') . '</a>';
+    }
+    $google_plus_url = theme_get_setting('google_plus_url', 'teach_it_dframe');
+    if ($google_plus_url !== '') {
+        $tag .= '<a href="' . $google_plus_url . '" class="gplus" title="' . t('Gplus') . '">' . t('G+') . '</a>';
+    }
+    $instagram_url = theme_get_setting('instagram_url', 'teach_it_dframe');
+    if ($instagram_url !== '') {
+        $tag .= '<a href="' . $instagram_url . '" class="instagram" title="' . t('instagram') . '">' . t('Instagram') . '</a>';
+    }
+    $pinterest_url = theme_get_setting('pinterest_url', 'teach_it_dframe');
+    if ($pinterest_url !== '') {
+        $tag .= '<a href="' . $pinterest_url . '" class="pinterest" title="' . t('pinterest') . '">' . t('Pinterest') . '</a>';
+    }
+    $youtube_url = theme_get_setting('youtube_url', 'teach_it_dframe');
+    if ($youtube_url !== '') {
+        $tag .= '<a href="' . $youtube_url . '" class="youtube" title="' . t('youtube') . '">' . t('Youtube') . '</a>';
+    }
+
+    $html = '<p class="pull-right socialIcons clearfix">' . $tag . '</p>';
+
+    return $html;
+}
+
+//hook theme for location page
