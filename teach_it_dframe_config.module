@@ -1,6 +1,7 @@
 <?php
 
-function teach_it_dframe_config_theme() {
+function teach_it_dframe_config_theme()
+{
     return array(
         'create_account_shop_form' => array(
             'render element' => 'form',
@@ -8,78 +9,115 @@ function teach_it_dframe_config_theme() {
     );
 }
 
-function create_account_shop_form($form, &$form_state) {
-    if (empty($form_state['abc'])) {
-        $form_state['abc'] = 'build';
+function create_account_shop_form($form, &$form_state)
+{
+    if (empty($form_state['submit_success'])) {
+        $form_state['submit_success'] = 'false';
     }
-    
-    $form["wrapper"] = array(
-        '#weight' => '-1',
-        "#markup" => "<div id='test-ajax'></div>"
-    );
-    
-    $form['email'] = array(
+
+    $form['wrapper'] = array(
         '#weight' => '0',
-        '#required' => '1',
-        '#type' => 'textfield',
-        '#title' => t('Email'),
+        //'#title' => t('New product'),
+        '#type' => 'fieldset',
+        '#collapsible' => '1',
+        '#collapsed' => '0',
+        '#prefix' => '<div id="create-account-fieldset-wrapper">',
+        '#suffix' => '</div>',
     );
 
-    $form['first_name'] = array(
-        '#weight' => '1',
-        '#required' => '1',
-        '#type' => 'textfield',
-        '#title' => t('First Name'),
-    );
-    
-    
-    if( $form_state['abc'] == 'build') {
-        $form['last_name'] = array(
+    if ($form_state['submit_success'] == 'false') {
+        $form['wrapper']['email'] = array(
+            '#weight' => '0',
+            '#required' => '1',
+            '#type' => 'textfield',
+            '#title' => t('Email'),
+        );
+
+        $form['wrapper']['first_name'] = array(
+            '#weight' => '1',
+            '#required' => '1',
+            '#type' => 'textfield',
+            '#title' => t('First Name'),
+        );
+
+        $form['wrapper']['last_name'] = array(
             '#weight' => '2',
             '#required' => '1',
             '#type' => 'textfield',
             '#title' => t('Last Name'),
         );
+
+        $form['wrapper']['password'] = array(
+            '#weight' => '3',
+            '#required' => '1',
+            '#type' => 'password_confirm',
+        );
+
+        $form['wrapper']['submit'] = array(
+            '#weight' => '4',
+            '#type' => 'submit',
+            '#value' => t('Sign Up'),
+            '#submit' => array('ajax_example_add_more_remove_one'),
+            "#ajax" => array(
+                "callback" => "dr_search_test_form_callback",
+                "wrapper" => "create-account-fieldset-wrapper",
+                "effect" => "fade"
+            )
+        );
     }
-    unset($form['last_name']);
-
-    $form['password'] = array(
-        '#weight' => '3',
-        '#required' => '1',
-        '#type' => 'password_confirm',
-    );
-
-    $form['submit'] = array(
-        '#weight' => '4',
-        '#type' => 'submit',
-        '#value' => t('Sign Up'),
-        '#submit' => array('ajax_example_add_more_remove_one'),
-        "#ajax" => array(
-            "callback" => "dr_search_test_form_callback",
-            "wrapper" => "test-ajax",
-            "effect" => "fade"
-        )
-    );
-
 
     return $form;
 }
 
-function ajax_example_add_more_remove_one($form, &$form_state) {
-    $form_state['abc'] = 'rebuild';
+function ajax_example_add_more_remove_one($form, &$form_state)
+{
+
+
+
+}
+
+function dr_search_test_form_callback($form, &$form_state)
+{
+    $values = $form_state['values'];
+    try {
+
+        $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
+        $session = $client->login(
+                array('username' => 'cantuananh_createaccount', 'apiKey' => 'cantuananh_createaccount123456')
+        );
+
+        $sessionId = $session->result;
+
+        $result = $client->customerCustomerCreate(array(
+            "sessionId" => $sessionId,
+            'customerData' => array('email' => $values['email'], 'firstname' => $values['first_name'], 'lastname' => $values['last_name'], 'password' => $values['password'], 'website_id' => 1, 'store_id' => 1, 'group_id' => 1)
+        ));
+    } catch (Exception $exc) {
+        $mgs = $exc->faultstring;
+    }
+
+    if(empty($mgs)) {
+        $form['wrapper']['error'] = array(
+            '#weight' => '-1',
+            '#markup' => 'Create successful!'
+        );
+
+        $form_state['submit_success'] = 'true';
+    }
+    else {
+        $form['wrapper']['error'] = array(
+            '#weight' => '-1',
+            '#markup' => $exc->faultstring
+        );
+    }
+
     $form_state['rebuild'] = TRUE;
 
+    return $form['wrapper'];
 }
 
-function dr_search_test_form_callback($form, &$form_state) {
-    return "<div id='test-ajax'>Wrapper Div</div>";
-}
-
-function dr_search_test_form_validate($form, &$form_state) {
-  form_set_error("password", "Some error to display.");
-}
-
-function create_account_shop_form_submit(&$form, &$form_state) {
+function create_account_shop_form_submit(&$form, &$form_state)
+{
 //
 //    $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
 //    $session = $client->login(
@@ -95,10 +133,10 @@ function create_account_shop_form_submit(&$form, &$form_state) {
 //
 //    var_dump($result);
 //    die;
-    unset($form['last_name']);
 }
 
-function teach_it_dframe_config_menu() {
+function teach_it_dframe_config_menu()
+{
     $items['shop/stores'] = array(
         'title' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
         'title callback' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
@@ -111,7 +149,8 @@ function teach_it_dframe_config_menu() {
     return $items;
 }
 
-function shop_stores_view() {
+function shop_stores_view()
+{
     $contents = '<h1 class="title-stores">SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!</h1>';
 
     $results = db_select('shop_stores', 's')
@@ -136,7 +175,8 @@ function shop_stores_view() {
     return $contents;
 }
 
-function process_content_stores($name, $store) {
+function process_content_stores($name, $store)
+{
     $build = '<div class="wrap-view-shop-store">';
     $build .= '<div class="overlay-stores">';
     $build .= '<p class="name-store">' . $store->name . '</p>';
@@ -156,7 +196,8 @@ function process_content_stores($name, $store) {
  *
  * This hook declares what blocks are provided by the module.
  */
-function teach_it_dframe_config_block_info() {
+function teach_it_dframe_config_block_info()
+{
     $blocks['social_information_footer'] = array(
         'info' => t('Header social information Footer'),
         'status' => TRUE,
@@ -205,7 +246,8 @@ function teach_it_dframe_config_block_info() {
  *
  * This hook generates the contents of the blocks themselves.
  */
-function teach_it_dframe_config_block_view($delta = '') {
+function teach_it_dframe_config_block_view($delta = '')
+{
     //The $delta parameter tells us which block is being requested.
     switch ($delta) {
         case 'social_information_footer':
@@ -232,7 +274,8 @@ function teach_it_dframe_config_block_view($delta = '') {
     return $block;
 }
 
-function block_second_menu_right($which_block) {
+function block_second_menu_right($which_block)
+{
     switch ($which_block) {
         case 'block_second_menu_right':
             $block = block_load('block', '15');
@@ -257,7 +300,8 @@ function block_second_menu_right($which_block) {
 /**
  * A module-defined block content function.
  */
-function block_teach_it_dframe_contents($which_block) {
+function block_teach_it_dframe_contents($which_block)
+{
     switch ($which_block) {
         case 'social_information_footer':
             return array('#markup' => '<div class="social-information-footer">' . social_information_html() . '</div>');
@@ -266,7 +310,8 @@ function block_teach_it_dframe_contents($which_block) {
     }
 }
 
-function block_list_locations($which_block) {
+function block_list_locations($which_block)
+{
     switch ($which_block) {
         case 'block_list_locations':
             $type = "location_shop";
@@ -297,7 +342,8 @@ function block_list_locations($which_block) {
     }
 }
 
-function social_information_html() {
+function social_information_html()
+{
     $tag = '';
     $twitter_url = theme_get_setting('twitter_url', 'teach_it_dframe');
     if ($twitter_url !== '') {
