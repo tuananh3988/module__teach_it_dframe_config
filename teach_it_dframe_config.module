@@ -17,9 +17,10 @@ function create_account_shop_form($form, &$form_state)
 
     $form['wrapper'] = array(
         '#weight' => '0',
-        //'#title' => t('New product'),
+        '#title' => t('CREATE AN ACCOUNT'),
+        '#description' => 'Once you create an account at ShopGreenStreet.com, you can update your address book and favorites to your Wish List ease!',
         '#type' => 'fieldset',
-        '#collapsible' => '1',
+        '#collapsible' => '0',
         '#collapsed' => '0',
         '#prefix' => '<div id="create-account-fieldset-wrapper">',
         '#suffix' => '</div>',
@@ -65,20 +66,24 @@ function create_account_shop_form($form, &$form_state)
             )
         );
     }
+    
+    if(isset($form_state['mgs'])) {
+        $form['wrapper']['mgs'] = array(
+            '#weight' => '-1',
+            '#markup' => $form_state['mgs']
+        );
+    }
+    
+    
 
     return $form;
 }
 
 function ajax_example_add_more_remove_one($form, &$form_state)
 {
-
-
-
-}
-
-function dr_search_test_form_callback($form, &$form_state)
-{
+    
     $values = $form_state['values'];
+    
     try {
 
         $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
@@ -92,27 +97,28 @@ function dr_search_test_form_callback($form, &$form_state)
             "sessionId" => $sessionId,
             'customerData' => array('email' => $values['email'], 'firstname' => $values['first_name'], 'lastname' => $values['last_name'], 'password' => $values['password'], 'website_id' => 1, 'store_id' => 1, 'group_id' => 1)
         ));
+        
     } catch (Exception $exc) {
         $mgs = $exc->faultstring;
+        
     }
-
+    
     if(empty($mgs)) {
-        $form['wrapper']['error'] = array(
-            '#weight' => '-1',
-            '#markup' => 'Create successful!'
-        );
-
+       $form_state['mgs'] = 'create success!';
         $form_state['submit_success'] = 'true';
     }
     else {
-        $form['wrapper']['error'] = array(
-            '#weight' => '-1',
-            '#markup' => $exc->faultstring
-        );
+        $form_state['mgs'] = $mgs;
     }
+    
 
     $form_state['rebuild'] = TRUE;
 
+}
+
+function dr_search_test_form_callback($form, &$form_state)
+{
+    
     return $form['wrapper'];
 }
 
