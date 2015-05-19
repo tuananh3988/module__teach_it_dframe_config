@@ -1,7 +1,6 @@
 <?php
 
-function teach_it_dframe_config_theme()
-{
+function teach_it_dframe_config_theme() {
     return array(
         'create_account_shop_form' => array(
             'render element' => 'form',
@@ -9,8 +8,7 @@ function teach_it_dframe_config_theme()
     );
 }
 
-function create_account_shop_form($form, &$form_state)
-{
+function create_account_shop_form($form, &$form_state) {
     if (empty($form_state['submit_success'])) {
         $form_state['submit_success'] = 'false';
     }
@@ -66,24 +64,14 @@ function create_account_shop_form($form, &$form_state)
             )
         );
     }
-    
-    if(isset($form_state['mgs'])) {
-        $form['wrapper']['mgs'] = array(
-            '#weight' => '-1',
-            '#markup' => $form_state['mgs']
-        );
-    }
-    
-    
 
     return $form;
 }
 
-function ajax_example_add_more_remove_one($form, &$form_state)
-{
-    
+function ajax_example_add_more_remove_one($form, &$form_state) {
+
     $values = $form_state['values'];
-    
+
     try {
 
         $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
@@ -97,33 +85,31 @@ function ajax_example_add_more_remove_one($form, &$form_state)
             "sessionId" => $sessionId,
             'customerData' => array('email' => $values['email'], 'firstname' => $values['first_name'], 'lastname' => $values['last_name'], 'password' => $values['password'], 'website_id' => 1, 'store_id' => 1, 'group_id' => 1)
         ));
-        
     } catch (Exception $exc) {
         $mgs = $exc->faultstring;
-        
+        if (strpos($mgs, 'email') !== FALSE) {
+            form_set_error('email', $mgs);
+        }
+        if (strpos($mgs, 'password') !== FALSE) {
+            form_set_error('password', $mgs);
+        }
     }
-    
-    if(empty($mgs)) {
-       $form_state['mgs'] = 'create success!';
+
+    if (empty($mgs)) {
+        drupal_set_message(t('Thank you for registering with Greene Street.'));
         $form_state['submit_success'] = 'true';
     }
-    else {
-        $form_state['mgs'] = $mgs;
-    }
-    
+
 
     $form_state['rebuild'] = TRUE;
-
 }
 
-function dr_search_test_form_callback($form, &$form_state)
-{
-    
+function dr_search_test_form_callback($form, &$form_state) {
+
     return $form['wrapper'];
 }
 
-function create_account_shop_form_submit(&$form, &$form_state)
-{
+function create_account_shop_form_submit(&$form, &$form_state) {
 //
 //    $client = new SoapClient('http://shop.greenestreet.com/index.php/api/v2_soap/index/?wsdl=1');
 //    $session = $client->login(
@@ -141,8 +127,7 @@ function create_account_shop_form_submit(&$form, &$form_state)
 //    die;
 }
 
-function teach_it_dframe_config_menu()
-{
+function teach_it_dframe_config_menu() {
     $items['shop/stores'] = array(
         'title' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
         'title callback' => 'SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!',
@@ -155,8 +140,7 @@ function teach_it_dframe_config_menu()
     return $items;
 }
 
-function shop_stores_view()
-{
+function shop_stores_view() {
     $contents = '<h1 class="title-stores">SEE WHAT’S NEW IN STORES & SHOP AT ONE OF OUR TEN LOCATIONS!</h1>';
 
     $results = db_select('shop_stores', 's')
@@ -181,8 +165,7 @@ function shop_stores_view()
     return $contents;
 }
 
-function process_content_stores($name, $store)
-{
+function process_content_stores($name, $store) {
     $build = '<div class="wrap-view-shop-store">';
     $build .= '<div class="overlay-stores">';
     $build .= '<p class="name-store">' . $store->name . '</p>';
@@ -202,8 +185,7 @@ function process_content_stores($name, $store)
  *
  * This hook declares what blocks are provided by the module.
  */
-function teach_it_dframe_config_block_info()
-{
+function teach_it_dframe_config_block_info() {
     $blocks['social_information_footer'] = array(
         'info' => t('Header social information Footer'),
         'status' => TRUE,
@@ -252,8 +234,7 @@ function teach_it_dframe_config_block_info()
  *
  * This hook generates the contents of the blocks themselves.
  */
-function teach_it_dframe_config_block_view($delta = '')
-{
+function teach_it_dframe_config_block_view($delta = '') {
     //The $delta parameter tells us which block is being requested.
     switch ($delta) {
         case 'social_information_footer':
@@ -280,8 +261,7 @@ function teach_it_dframe_config_block_view($delta = '')
     return $block;
 }
 
-function block_second_menu_right($which_block)
-{
+function block_second_menu_right($which_block) {
     switch ($which_block) {
         case 'block_second_menu_right':
             $block = block_load('block', '15');
@@ -306,8 +286,7 @@ function block_second_menu_right($which_block)
 /**
  * A module-defined block content function.
  */
-function block_teach_it_dframe_contents($which_block)
-{
+function block_teach_it_dframe_contents($which_block) {
     switch ($which_block) {
         case 'social_information_footer':
             return array('#markup' => '<div class="social-information-footer">' . social_information_html() . '</div>');
@@ -316,8 +295,7 @@ function block_teach_it_dframe_contents($which_block)
     }
 }
 
-function block_list_locations($which_block)
-{
+function block_list_locations($which_block) {
     switch ($which_block) {
         case 'block_list_locations':
             $type = "location_shop";
@@ -348,8 +326,7 @@ function block_list_locations($which_block)
     }
 }
 
-function social_information_html()
-{
+function social_information_html() {
     $tag = '';
     $twitter_url = theme_get_setting('twitter_url', 'teach_it_dframe');
     if ($twitter_url !== '') {
